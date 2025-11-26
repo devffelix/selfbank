@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Settings, Target, Sun, Moon, LogOut } from 'lucide-react';
 import { Goal } from '../types';
@@ -16,7 +16,15 @@ interface HeaderProps {
   userEmail?: string;
 }
 
-export const Header: React.FC<HeaderProps> = ({ balance, goal, onUpdateGoal, onResetData, isDark, toggleTheme, userEmail }) => {
+export const Header = ({ 
+  balance, 
+  goal, 
+  onUpdateGoal, 
+  onResetData, 
+  isDark, 
+  toggleTheme, 
+  userEmail 
+}: HeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [tempGoalTitle, setTempGoalTitle] = useState(goal.title);
   const [tempGoalAmount, setTempGoalAmount] = useState(goal.targetAmount.toString());
