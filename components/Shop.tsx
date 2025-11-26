@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShoppingBag, Plus, Trash2, Gift, Lightbulb, ArrowRight, X } from 'lucide-react';
+import { ShoppingBag, Plus, Trash2, Gift, Lightbulb, ArrowRight, X, Check } from 'lucide-react';
 import { RewardItem } from '../types';
 import { Button } from './ui/Button';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -17,6 +17,9 @@ export const Shop: React.FC<ShopProps> = ({ balance, rewards, onAddReward, onRed
   const [step, setStep] = useState<1 | 2>(1); // 1 = Dica, 2 = Form
   const [title, setTitle] = useState('');
   const [cost, setCost] = useState('');
+  
+  // Track specific item currently being purchased for animation
+  const [purchasingId, setPurchasingId] = useState<string | null>(null);
 
   const handleOpenModal = () => {
     setStep(1);
@@ -32,6 +35,12 @@ export const Shop: React.FC<ShopProps> = ({ balance, rewards, onAddReward, onRed
     if (!title || !cost) return;
     onAddReward(title, parseFloat(cost));
     setIsModalOpen(false);
+  };
+
+  const handleBuy = (reward: RewardItem) => {
+      onRedeem(reward);
+      setPurchasingId(reward.id);
+      setTimeout(() => setPurchasingId(null), 1500);
   };
 
   return (
@@ -179,21 +188,50 @@ export const Shop: React.FC<ShopProps> = ({ balance, rewards, onAddReward, onRed
         <AnimatePresence mode="popLayout">
             {rewards.map(reward => {
             const canAfford = balance >= reward.cost;
+            const isPurchasing = purchasingId === reward.id;
+
             return (
                 <motion.div
                 layout
                 initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
+                animate={{ 
+                    opacity: 1, 
+                    scale: 1,
+                    borderColor: isPurchasing ? '#fbbf24' : '', // Flash Amber
+                    backgroundColor: isPurchasing ? 'rgba(251, 191, 36, 0.1)' : '' 
+                }}
                 exit={{ opacity: 0, scale: 0.9 }}
                 key={reward.id}
                 className={`
-                    relative p-5 rounded-xl border flex flex-col justify-between group overflow-hidden transition-colors
-                    ${canAfford 
+                    relative p-5 rounded-xl border flex flex-col justify-between group overflow-hidden transition-all duration-300
+                    ${canAfford && !isPurchasing
                     ? 'bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 hover:border-amber-500/50 shadow-sm' 
-                    : 'bg-zinc-100 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 opacity-60 grayscale-[0.5]'
+                    : !isPurchasing ? 'bg-zinc-100 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 opacity-60 grayscale-[0.5]' : ''
                     }
+                    ${isPurchasing ? 'border-amber-500 ring-2 ring-amber-500/20' : ''}
                 `}
                 >
+                {/* Overlay for purchase feedback */}
+                <AnimatePresence>
+                    {isPurchasing && (
+                        <motion.div 
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            exit={{ opacity: 0 }}
+                            className="absolute inset-0 bg-amber-500/90 flex items-center justify-center z-10"
+                        >
+                            <motion.div 
+                                initial={{ scale: 0.5 }}
+                                animate={{ scale: 1.2 }}
+                                className="text-white font-bold flex flex-col items-center"
+                            >
+                                <Check size={32} strokeWidth={4} />
+                                <span className="text-sm mt-1">RESGATADO!</span>
+                            </motion.div>
+                        </motion.div>
+                    )}
+                </AnimatePresence>
+
                 <div className="flex justify-between items-start mb-4 gap-4">
                     <h3 className="font-semibold text-zinc-800 dark:text-zinc-100 leading-tight">{reward.title}</h3>
                     <span className={`font-mono font-bold whitespace-nowrap ${canAfford ? 'text-amber-500 dark:text-amber-400' : 'text-zinc-500'}`}>
@@ -205,8 +243,8 @@ export const Shop: React.FC<ShopProps> = ({ balance, rewards, onAddReward, onRed
                     <Button 
                     fullWidth 
                     size="sm" 
-                    disabled={!canAfford}
-                    onClick={() => onRedeem(reward)}
+                    disabled={!canAfford || isPurchasing}
+                    onClick={() => handleBuy(reward)}
                     className={canAfford ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-amber-900/20' : ''}
                     >
                     {canAfford ? 'Comprar' : 'Faltam fundos'}
@@ -215,6 +253,7 @@ export const Shop: React.FC<ShopProps> = ({ balance, rewards, onAddReward, onRed
                     onClick={() => onDelete(reward.id)}
                     className="p-2 text-zinc-400 dark:text-zinc-600 hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors"
                     title="Excluir recompensa"
+                    disabled={isPurchasing}
                     >
                     <Trash2 size={16} />
                     </button>

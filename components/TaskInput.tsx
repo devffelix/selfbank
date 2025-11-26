@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Plus, Repeat, CheckSquare } from 'lucide-react';
+import { Plus, Repeat, CheckSquare, CheckCircle2 } from 'lucide-react';
 import { Button } from './ui/Button';
 import { ItemType } from '../types';
+import { AnimatePresence, motion } from 'framer-motion';
 
 interface TaskInputProps {
   onAdd: (title: string, value: number, type: ItemType) => void;
@@ -11,6 +12,7 @@ export const TaskInput: React.FC<TaskInputProps> = ({ onAdd }) => {
   const [title, setTitle] = useState('');
   const [value, setValue] = useState('');
   const [type, setType] = useState<ItemType>('TASK');
+  const [isSuccess, setIsSuccess] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -19,6 +21,10 @@ export const TaskInput: React.FC<TaskInputProps> = ({ onAdd }) => {
     onAdd(title, parseFloat(value), type);
     setTitle('');
     setValue('');
+    
+    // Trigger success feedback
+    setIsSuccess(true);
+    setTimeout(() => setIsSuccess(false), 1500);
   };
 
   return (
@@ -70,8 +76,35 @@ export const TaskInput: React.FC<TaskInputProps> = ({ onAdd }) => {
         </div>
 
         <div className="md:col-span-2">
-          <Button type="submit" fullWidth className="h-full">
-            <Plus size={18} className="mr-1" /> Adicionar
+          <Button 
+            type="submit" 
+            fullWidth 
+            className={`h-full transition-all duration-300 ${isSuccess ? 'bg-emerald-600 border-emerald-500' : ''}`}
+            disabled={isSuccess}
+          >
+             <AnimatePresence mode="wait">
+                {isSuccess ? (
+                    <motion.div 
+                        key="success"
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.5, opacity: 0 }}
+                        className="flex items-center"
+                    >
+                        <CheckCircle2 size={18} className="mr-1" /> Salvo!
+                    </motion.div>
+                ) : (
+                    <motion.div 
+                        key="default"
+                        initial={{ scale: 0.5, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        exit={{ scale: 0.5, opacity: 0 }}
+                        className="flex items-center"
+                    >
+                        <Plus size={18} className="mr-1" /> Adicionar
+                    </motion.div>
+                )}
+             </AnimatePresence>
           </Button>
         </div>
       </div>

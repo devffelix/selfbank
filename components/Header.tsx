@@ -1,6 +1,6 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { Settings, Target, Sun, Moon, LogOut } from 'lucide-react';
+import { useState, useEffect, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Settings, Target, Sun, Moon, LogOut, AlertCircle } from 'lucide-react';
 import { Goal } from '../types';
 import { Button } from './ui/Button';
 import { supabase } from '../supabaseClient';
@@ -26,8 +26,19 @@ export const Header = ({
   userEmail 
 }: HeaderProps) => {
   const [isEditing, setIsEditing] = useState(false);
+  const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [tempGoalTitle, setTempGoalTitle] = useState(goal.title);
   const [tempGoalAmount, setTempGoalAmount] = useState(goal.targetAmount.toString());
+  
+  // Track previous balance to determine animation color (green for gain, red for loss)
+  const prevBalanceRef = useRef(balance);
+  const [balanceChangeType, setBalanceChangeType] = useState<'increase' | 'decrease' | 'neutral'>('neutral');
+
+  useEffect(() => {
+    if (balance > prevBalanceRef.current) setBalanceChangeType('increase');
+    else if (balance < prevBalanceRef.current) setBalanceChangeType('decrease');
+    prevBalanceRef.current = balance;
+  }, [balance]);
 
   const progress = Math.min((balance / (goal.targetAmount || 1)) * 100, 100);
   
@@ -39,8 +50,13 @@ export const Header = ({
     setIsEditing(false);
   };
 
-  const handleLogout = async () => {
+  const handleLogoutClick = () => {
+    setIsLogoutConfirmOpen(true);
+  };
+
+  const confirmLogout = async () => {
       await supabase.auth.signOut();
+      setIsLogoutConfirmOpen(false);
   };
 
   const formatCurrency = (val: number) => {
@@ -81,9 +97,15 @@ export const Header = ({
           <div className="flex items-start gap-4">
              <div className="text-right">
                 <h3 className="text-zinc-500 text-xs font-mono uppercase tracking-wider mb-1">Saldo</h3>
-                <div className="text-3xl font-mono font-bold text-emerald-600 dark:text-emerald-400 drop-shadow-sm dark:drop-shadow-[0_0_10px_rgba(52,211,153,0.3)]">
+                <motion.div 
+                  key={balance} // Triggers animation on change
+                  initial={{ scale: 1.2, color: balanceChangeType === 'increase' ? '#10b981' : '#f59e0b' }}
+                  animate={{ scale: 1, color: isDark ? '#34d399' : '#059669' }}
+                  transition={{ type: "spring", stiffness: 300, damping: 15 }}
+                  className="text-3xl font-mono font-bold text-emerald-600 dark:text-emerald-400 drop-shadow-sm dark:drop-shadow-[0_0_10px_rgba(52,211,153,0.3)]"
+                >
                   {formatCurrency(balance)}
-                </div>
+                </motion.div>
             </div>
             
             <div className="flex flex-col gap-2">
@@ -94,7 +116,7 @@ export const Header = ({
                     {isDark ? <Sun size={18} /> : <Moon size={18} />}
                 </button>
                 <button
-                    onClick={handleLogout}
+                    onClick={handleLogoutClick}
                     title="Sair"
                     className="p-2 rounded-full bg-zinc-200 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 hover:text-red-500 dark:hover:text-red-400 transition-colors"
                 >
@@ -127,61 +149,100 @@ export const Header = ({
         </div>
 
         {/* Goal Edit Modal */}
-        {isEditing && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9 }}
-              animate={{ opacity: 1, scale: 1 }}
-              className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl w-full max-w-md shadow-2xl"
-            >
-              <div className="flex justify-between items-center mb-6">
-                <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
-                  <Target className="text-amber-500" /> Configurar Meta
-                </h3>
-              </div>
-              
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-zinc-500 dark:text-zinc-400 mb-2">Nome da Meta</label>
-                  <input 
-                    type="text" 
-                    value={tempGoalTitle}
-                    onChange={(e) => setTempGoalTitle(e.target.value)}
-                    className="w-full bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 text-zinc-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm text-zinc-500 dark:text-zinc-400 mb-2">Valor Alvo (R$)</label>
-                  <input 
-                    type="number" 
-                    value={tempGoalAmount}
-                    onChange={(e) => setTempGoalAmount(e.target.value)}
-                    className="w-full bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 text-zinc-900 dark:text-white font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
-                  />
-                </div>
-
-                <div className="pt-4 flex gap-3">
-                  <Button variant="secondary" fullWidth onClick={() => setIsEditing(false)}>Cancelar</Button>
-                  <Button fullWidth onClick={handleSave}>Salvar</Button>
+        <AnimatePresence>
+          {isEditing && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl w-full max-w-md shadow-2xl"
+              >
+                <div className="flex justify-between items-center mb-6">
+                  <h3 className="text-xl font-bold text-zinc-900 dark:text-white flex items-center gap-2">
+                    <Target className="text-amber-500" /> Configurar Meta
+                  </h3>
                 </div>
                 
-                <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800">
-                   <button 
-                    onClick={() => {
-                       if(window.confirm('Tem certeza que deseja apagar todos os dados desta conta?')) {
-                           onResetData();
-                           setIsEditing(false);
-                       }
-                    }}
-                    className="text-xs text-red-500 hover:text-red-400 w-full text-center"
-                   >
-                     Resetar Tudo (Hard Reset)
-                   </button>
+                <div className="space-y-4">
+                  <div>
+                    <label className="block text-sm text-zinc-500 dark:text-zinc-400 mb-2">Nome da Meta</label>
+                    <input 
+                      type="text" 
+                      value={tempGoalTitle}
+                      onChange={(e) => setTempGoalTitle(e.target.value)}
+                      className="w-full bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 text-zinc-900 dark:text-white focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-sm text-zinc-500 dark:text-zinc-400 mb-2">Valor Alvo (R$)</label>
+                    <input 
+                      type="number" 
+                      value={tempGoalAmount}
+                      onChange={(e) => setTempGoalAmount(e.target.value)}
+                      className="w-full bg-zinc-100 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-lg p-3 text-zinc-900 dark:text-white font-mono focus:ring-2 focus:ring-emerald-500 focus:outline-none"
+                    />
+                  </div>
+
+                  <div className="pt-4 flex gap-3">
+                    <Button variant="secondary" fullWidth onClick={() => setIsEditing(false)}>Cancelar</Button>
+                    <Button fullWidth onClick={handleSave}>Salvar</Button>
+                  </div>
+                  
+                  <div className="pt-6 border-t border-zinc-200 dark:border-zinc-800">
+                    <button 
+                      onClick={() => {
+                        if(window.confirm('Tem certeza que deseja apagar todos os dados desta conta?')) {
+                            onResetData();
+                            setIsEditing(false);
+                        }
+                      }}
+                      className="text-xs text-red-500 hover:text-red-400 w-full text-center"
+                    >
+                      Resetar Tudo (Hard Reset)
+                    </button>
+                  </div>
                 </div>
-              </div>
-            </motion.div>
-          </div>
-        )}
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Logout Confirmation Modal */}
+        <AnimatePresence>
+          {isLogoutConfirmOpen && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+              <motion.div 
+                initial={{ opacity: 0, scale: 0.9 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-6 rounded-2xl w-full max-w-sm shadow-2xl"
+              >
+                <div className="flex flex-col items-center text-center space-y-4">
+                  <div className="w-12 h-12 bg-red-100 dark:bg-red-500/10 rounded-full flex items-center justify-center text-red-500">
+                    <LogOut size={24} />
+                  </div>
+                  
+                  <div>
+                    <h3 className="text-xl font-bold text-zinc-900 dark:text-white mb-2">Sair da conta?</h3>
+                    <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                      Você precisará fazer login novamente para acessar seus dados.
+                    </p>
+                  </div>
+
+                  <div className="flex gap-3 w-full mt-4">
+                    <Button variant="secondary" fullWidth onClick={() => setIsLogoutConfirmOpen(false)}>
+                      Cancelar
+                    </Button>
+                    <Button variant="danger" fullWidth onClick={confirmLogout}>
+                      Sair
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
 
       </div>
     </header>
