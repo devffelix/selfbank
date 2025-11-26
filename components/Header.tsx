@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, Target, Sun, Moon, LogOut, AlertCircle } from 'lucide-react';
+import { Settings, Target, Sun, Moon, LogOut } from 'lucide-react';
 import { Goal } from '../types';
 import { Button } from './ui/Button';
 import { supabase } from '../supabaseClient';
