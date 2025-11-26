@@ -1,6 +1,5 @@
-import React from 'react';
 import { motion } from 'framer-motion';
-import { Check, Repeat, ShoppingBag, Battery, Wifi, Signal } from 'lucide-react';
+import { Check, ShoppingBag, Battery, Wifi, Signal } from 'lucide-react';
 
 export const Mockup = () => {
   return (

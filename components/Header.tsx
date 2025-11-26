@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Settings, Target, Sun, Moon, LogOut, User } from 'lucide-react';
+import { Settings, Target, Sun, Moon, LogOut } from 'lucide-react';
 import { Goal } from '../types';
 import { Button } from './ui/Button';
 import { supabase } from '../supabaseClient';
