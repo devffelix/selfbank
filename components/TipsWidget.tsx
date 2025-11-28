@@ -1,4 +1,3 @@
-import React from 'react';
 import { Brain, Scale, Repeat, ShieldAlert } from 'lucide-react';
 
 export const TipsWidget = () => {

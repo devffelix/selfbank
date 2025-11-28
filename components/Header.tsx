@@ -1,6 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Sun, Moon, LogOut, BarChart3, Edit3, Wallet, TrendingUp, Calendar, Zap, CheckCircle2 } from 'lucide-react';
+import { Target, Sun, Moon, LogOut, BarChart3, Edit3, Wallet, TrendingUp, Zap, CheckCircle2 } from 'lucide-react';
 import { Goal, GrindItem } from '../types';
 import { Button } from './ui/Button';
 import { Logo } from './Logo';
