@@ -1,17 +1,18 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Target, Sun, Moon, LogOut, BarChart3, Edit3, Wallet, TrendingUp } from 'lucide-react';
-import { Goal } from '../types';
+import { Target, Sun, Moon, LogOut, BarChart3, Edit3, Wallet, TrendingUp, Calendar, Zap, CheckCircle2 } from 'lucide-react';
+import { Goal, GrindItem } from '../types';
 import { Button } from './ui/Button';
-import { supabase } from '../supabaseClient';
 import { Logo } from './Logo';
 
 interface HeaderProps {
   balance: number;
   goal: Goal;
+  items: GrindItem[]; // Added items prop for calculating stats
   onUpdateGoal: (goal: Goal) => void;
   onResetData: () => void;
   onOpenHistory: () => void;
+  onLogout: () => void;
   isDark: boolean;
   toggleTheme: () => void;
   userEmail?: string;
@@ -20,9 +21,11 @@ interface HeaderProps {
 export const Header = ({ 
   balance, 
   goal, 
+  items,
   onUpdateGoal, 
   onResetData, 
   onOpenHistory,
+  onLogout,
   isDark, 
   toggleTheme, 
   userEmail 
@@ -34,6 +37,41 @@ export const Header = ({
 
   const progress = Math.min((balance / (goal.targetAmount || 1)) * 100, 100);
   
+  // --- CALCULATE DAILY STATS ---
+  const stats = useMemo(() => {
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 1. Earnings Today
+    const earningsToday = items.reduce((acc, item) => {
+        // Check Tasks
+        if (item.type === 'TASK' && item.completedAt) {
+            const completedDate = new Date(item.completedAt).toISOString().split('T')[0];
+            if (completedDate === today) return acc + item.value;
+        }
+        // Check Habits
+        if (item.type === 'HABIT' && item.lastCompletedDate === today) {
+            return acc + item.value;
+        }
+        return acc;
+    }, 0);
+
+    // 2. Tasks Completed Today
+    const tasksDoneToday = items.filter(item => {
+        if (item.type === 'TASK' && item.completedAt) {
+            const completedDate = new Date(item.completedAt).toISOString().split('T')[0];
+            return completedDate === today;
+        }
+        return false;
+    }).length;
+
+    // 3. Habits Progress
+    const totalHabits = items.filter(i => i.type === 'HABIT').length;
+    const habitsDone = items.filter(i => i.type === 'HABIT' && i.lastCompletedDate === today).length;
+
+    return { earningsToday, tasksDoneToday, totalHabits, habitsDone };
+  }, [items]);
+
+
   const handleSave = () => {
     onUpdateGoal({
       title: tempGoalTitle,
@@ -47,7 +85,7 @@ export const Header = ({
   };
 
   const confirmLogout = async () => {
-      await supabase.auth.signOut();
+      onLogout();
       setIsLogoutConfirmOpen(false);
   };
 
@@ -178,6 +216,55 @@ export const Header = ({
                     </div>
                 </div>
             </div>
+        </div>
+
+        {/* --- DAILY STATS GRID --- */}
+        <div className="grid grid-cols-3 gap-3 md:gap-4">
+            <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 md:p-4 rounded-2xl flex flex-col justify-between shadow-sm"
+            >
+                <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-bold tracking-wider">
+                    <TrendingUp size={14} className="text-emerald-500" />
+                    <span>Ganhos Hoje</span>
+                </div>
+                <div className="font-mono font-bold text-lg md:text-xl text-zinc-900 dark:text-white mt-1">
+                    +{formatCurrency(stats.earningsToday)}
+                </div>
+            </motion.div>
+
+            <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 md:p-4 rounded-2xl flex flex-col justify-between shadow-sm"
+            >
+                <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-bold tracking-wider">
+                    <CheckCircle2 size={14} className="text-blue-500" />
+                    <span>Foco</span>
+                </div>
+                <div className="font-mono font-bold text-lg md:text-xl text-zinc-900 dark:text-white mt-1">
+                    {stats.tasksDoneToday} <span className="text-xs font-sans font-medium text-zinc-500">tarefas</span>
+                </div>
+            </motion.div>
+
+            <motion.div 
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 p-3 md:p-4 rounded-2xl flex flex-col justify-between shadow-sm"
+            >
+                <div className="flex items-center gap-2 text-zinc-500 dark:text-zinc-400 text-[10px] uppercase font-bold tracking-wider">
+                    <Zap size={14} className="text-amber-500" />
+                    <span>Hábitos</span>
+                </div>
+                <div className="flex items-baseline gap-1 mt-1">
+                    <span className="font-mono font-bold text-lg md:text-xl text-zinc-900 dark:text-white">{stats.habitsDone}</span>
+                    <span className="text-zinc-400 text-sm">/ {stats.totalHabits}</span>
+                </div>
+            </motion.div>
         </div>
 
         {/* Goal Edit Modal */}

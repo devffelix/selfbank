@@ -3,13 +3,14 @@ import { Header } from './components/Header';
 import { TaskInput } from './components/TaskInput';
 import { TaskList } from './components/TaskList';
 import { Shop } from './components/Shop';
+import { TipsWidget } from './components/TipsWidget'; // IMPORT ADDED
 import { Auth } from './components/Auth';
 import { LandingPage } from './components/LandingPage';
 import { History } from './components/History';
 import { RewardModal } from './components/RewardModal';
 import { AppState, GrindItem, ItemType, RewardItem, Goal } from './types';
 import { motion, AnimatePresence } from 'framer-motion';
-import { LayoutList, Repeat, ShoppingBag, Loader2 } from 'lucide-react';
+import { LayoutList, Repeat, Loader2 } from 'lucide-react';
 import { supabase } from './supabaseClient';
 import { Session } from '@supabase/supabase-js';
 
@@ -175,7 +176,6 @@ function App() {
     });
   };
 
-  const [activeTab, setActiveTab] = useState<'tasks' | 'habits' | 'shop'>('tasks');
   const [confetti, setConfetti] = useState(false);
   const [theme, setTheme] = useState<'dark' | 'light'>('dark');
 
@@ -362,6 +362,17 @@ function App() {
       }
   }
 
+  const handleLogout = async () => {
+    if (offlineMode) {
+        setOfflineMode(false);
+        setShowLanding(true);
+    } else {
+        await supabase.auth.signOut();
+        setSession(null);
+        setShowLanding(true);
+    }
+  };
+
   // Loading Screen
   if (loadingSession) {
       return (
@@ -382,12 +393,6 @@ function App() {
         onBackToHome={() => setShowLanding(true)}
       />;
   }
-
-  // Filter Active Items (Exclude Completed Tasks)
-  const activeItems = state.items.filter(item => {
-      if (item.type === 'TASK' && item.completedAt) return false;
-      return true;
-  });
 
   return (
     <div className="min-h-screen pb-24 md:pb-12 bg-zinc-50 dark:bg-zinc-950 text-zinc-900 dark:text-zinc-100 font-sans selection:bg-emerald-500/30 transition-colors duration-300 relative overflow-hidden">
@@ -418,149 +423,97 @@ function App() {
                 initial={{ x: Math.random() * window.innerWidth, y: -20, rotate: 0 }}
                 animate={{ y: window.innerHeight + 20, rotate: 360, x: `calc(${Math.random() * 100}vw + ${(Math.random() - 0.5) * 200}px)` }}
                 transition={{ duration: Math.random() * 2 + 2, ease: "linear", repeat: Infinity }}
-                style={{ backgroundColor: ['#10b981', '#fbbf24', '#3b82f6'][Math.floor(Math.random() * 3)] }}
+                style={{ backgroundColor: ['#10b981', '#fbbf24', '#3b82f6'][i % 3] }}
               />
             ))}
-            <div className="text-center">
-              <h2 className="text-6xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 to-amber-400 drop-shadow-2xl">META ATINGIDA!</h2>
-            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <History 
-        isOpen={isHistoryOpen} 
-        onClose={() => setIsHistoryOpen(false)} 
-        items={state.items} // Pass all items (including completed)
-      />
-      
-      {/* GLOBAL REWARD MODAL (LIFTED STATE) */}
-      <RewardModal 
-        isOpen={isRewardModalOpen} 
-        onClose={() => setIsRewardModalOpen(false)} 
-        onConfirm={handleAddReward} 
-      />
-
-      {/* MAIN CONTENT WRAPPER (Z-INDEX 10) */}
-      <div className="relative z-10">
+      <div className="max-w-7xl mx-auto relative z-10 px-4">
+        {/* HEADER */}
         <Header 
             balance={state.balance} 
             goal={state.goal} 
+            items={state.items}
             onUpdateGoal={handleUpdateGoal}
             onResetData={handleResetData}
             onOpenHistory={() => setIsHistoryOpen(true)}
+            onLogout={handleLogout}
             isDark={theme === 'dark'}
             toggleTheme={toggleTheme}
-            userEmail={session?.user.email || 'Modo Offline'}
+            userEmail={session?.user?.email || (offlineMode ? 'Modo Offline' : undefined)}
         />
 
-        <main className="max-w-4xl mx-auto px-4 md:px-8 pt-8">
+        {/* MAIN GRID */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mt-6 max-w-4xl mx-auto lg:max-w-none">
             
-            <TaskInput onAdd={handleAddItem} />
+            {/* LEFT COLUMN: PRODUCTION ZONE (65%) */}
+            <div className="lg:col-span-8 space-y-8">
+                <TaskInput onAdd={handleAddItem} />
 
-            {/* Desktop View: Grid */}
-            <div className="hidden md:grid grid-cols-12 gap-8">
-            <div className="col-span-4 space-y-4">
-                <h3 className="text-lg font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><Repeat size={18} /> Hábitos Diários</h3>
-                <TaskList items={activeItems} type="HABIT" onComplete={handleCompleteItem} onDelete={handleDeleteItem} />
-            </div>
-            <div className="col-span-4 space-y-4">
-                <h3 className="text-lg font-semibold text-zinc-500 dark:text-zinc-400 flex items-center gap-2"><LayoutList size={18} /> Lista de Tarefas</h3>
-                <TaskList items={activeItems} type="TASK" onComplete={handleCompleteItem} onDelete={handleDeleteItem} />
-            </div>
-            <div className="col-span-4 space-y-4 border-l border-zinc-200 dark:border-zinc-800 pl-8 bg-zinc-50/50 dark:bg-zinc-950/20 rounded-2xl backdrop-blur-sm">
-                <Shop 
-                  balance={state.balance} 
-                  rewards={state.rewards} 
-                  onOpenAddReward={() => setIsRewardModalOpen(true)}
-                  onRedeem={handleRedeemReward}
-                  onDelete={handleDeleteReward}
-                />
-            </div>
-            </div>
-
-            {/* Mobile View: Tabs Content */}
-            <div className="md:hidden pb-20">
-            <AnimatePresence mode="wait">
-                {activeTab === 'tasks' && (
-                <motion.div 
-                    key="tasks"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    <div className="mb-8">
-                    <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-4">Lista de Tarefas</h3>
-                    <TaskList items={activeItems} type="TASK" onComplete={handleCompleteItem} onDelete={handleDeleteItem} />
+                {/* HABITS SECTION */}
+                <section>
+                    <div className="flex items-center gap-2 mb-4 px-2">
+                        <Repeat size={18} className="text-zinc-400" />
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-500">Hábitos Diários</h3>
                     </div>
-                </motion.div>
-                )}
-                
-                {activeTab === 'habits' && (
-                <motion.div 
-                    key="habits"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    <div className="mb-8">
-                    <h3 className="text-zinc-500 text-xs font-bold uppercase tracking-widest mb-4">Hábitos Diários</h3>
-                    <TaskList items={activeItems} type="HABIT" onComplete={handleCompleteItem} onDelete={handleDeleteItem} />
+                    {/* Using simple flex wrap for habits if TaskList renders items as flex rows */}
+                    <div className="grid grid-cols-1 gap-3">
+                        <TaskList 
+                            items={state.items} 
+                            type="HABIT" 
+                            onComplete={handleCompleteItem} 
+                            onDelete={handleDeleteItem} 
+                        />
                     </div>
-                </motion.div>
-                )}
+                </section>
 
-                {activeTab === 'shop' && (
-                <motion.div 
-                    key="shop"
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.2 }}
-                >
-                    <Shop 
-                      balance={state.balance} 
-                      rewards={state.rewards} 
-                      onOpenAddReward={() => setIsRewardModalOpen(true)}
-                      onRedeem={handleRedeemReward}
-                      onDelete={handleDeleteReward}
+                {/* TASKS SECTION */}
+                <section>
+                     <div className="flex items-center gap-2 mb-4 px-2">
+                        <LayoutList size={18} className="text-zinc-400" />
+                        <h3 className="text-sm font-bold uppercase tracking-wider text-zinc-500">Lista de Tarefas</h3>
+                    </div>
+                    <TaskList 
+                        items={state.items} 
+                        type="TASK" 
+                        onComplete={handleCompleteItem} 
+                        onDelete={handleDeleteItem} 
                     />
-                </motion.div>
-                )}
-            </AnimatePresence>
+                </section>
             </div>
-        </main>
-      </div>
 
-      {/* Mobile Bottom Navigation (Z-INDEX 40) */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-lg border-t border-zinc-200 dark:border-zinc-800 p-2 z-40">
-        <div className="grid grid-cols-3 gap-2">
-          <button 
-            onClick={() => setActiveTab('habits')}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-colors ${activeTab === 'habits' ? 'bg-zinc-100 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
-          >
-            <Repeat size={20} />
-            <span className="text-[10px] mt-1 font-medium">Hábitos</span>
-          </button>
-          <button 
-            onClick={() => setActiveTab('tasks')}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-colors ${activeTab === 'tasks' ? 'bg-zinc-100 dark:bg-zinc-800 text-emerald-600 dark:text-emerald-400' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
-          >
-            <LayoutList size={20} />
-            <span className="text-[10px] mt-1 font-medium">Tarefas</span>
-          </button>
-          <button 
-            onClick={() => setActiveTab('shop')}
-            className={`flex flex-col items-center justify-center p-3 rounded-xl transition-colors ${activeTab === 'shop' ? 'bg-zinc-100 dark:bg-zinc-800 text-amber-500 dark:text-amber-400' : 'text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'}`}
-          >
-            <ShoppingBag size={20} />
-            <span className="text-[10px] mt-1 font-medium">Loja</span>
-          </button>
+            {/* RIGHT COLUMN: CONSUMPTION ZONE (35%) */}
+            <div className="lg:col-span-4">
+                <div className="sticky top-24">
+                    <Shop 
+                        balance={state.balance} 
+                        rewards={state.rewards} 
+                        onOpenAddReward={() => setIsRewardModalOpen(true)} 
+                        onRedeem={handleRedeemReward} 
+                        onDelete={handleDeleteReward}
+                    />
+                    
+                    {/* TIPS WIDGET ADDED HERE */}
+                    <TipsWidget />
+                </div>
+            </div>
         </div>
       </div>
 
+      {/* MODALS */}
+      <History 
+        isOpen={isHistoryOpen} 
+        onClose={() => setIsHistoryOpen(false)} 
+        items={state.items} 
+      />
+      
+      <RewardModal
+        isOpen={isRewardModalOpen}
+        onClose={() => setIsRewardModalOpen(false)}
+        onConfirm={handleAddReward}
+      />
     </div>
   );
 }
