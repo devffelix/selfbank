@@ -59,7 +59,6 @@ function App() {
   const [loadingSession, setLoadingSession] = useState(true);
   const [offlineMode, setOfflineMode] = useState(false);
   const [showLanding, setShowLanding] = useState(true);
-  const [isSyncing, setIsSyncing] = useState(false);
   const [isHistoryOpen, setIsHistoryOpen] = useState(false);
   const [isRewardModalOpen, setIsRewardModalOpen] = useState(false);
 
@@ -101,7 +100,6 @@ function App() {
     if (!session?.user) return;
 
     const loadDataFromSupabase = async () => {
-      setIsSyncing(true);
       try {
         const user = session.user;
 
@@ -160,8 +158,6 @@ function App() {
 
       } catch (error) {
         console.error("Erro ao carregar dados:", error);
-      } finally {
-        setIsSyncing(false);
       }
     };
 

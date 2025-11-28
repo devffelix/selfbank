@@ -1,6 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Settings, Target, Sun, Moon, LogOut, BarChart3, Edit3, Wallet, TrendingUp } from 'lucide-react';
+import { Target, Sun, Moon, LogOut, BarChart3, Edit3, Wallet, TrendingUp } from 'lucide-react';
 import { Goal } from '../types';
 import { Button } from './ui/Button';
 import { supabase } from '../supabaseClient';
@@ -31,16 +31,6 @@ export const Header = ({
   const [isLogoutConfirmOpen, setIsLogoutConfirmOpen] = useState(false);
   const [tempGoalTitle, setTempGoalTitle] = useState(goal.title);
   const [tempGoalAmount, setTempGoalAmount] = useState(goal.targetAmount.toString());
-  
-  // Track previous balance to determine animation color
-  const prevBalanceRef = useRef(balance);
-  const [balanceChangeType, setBalanceChangeType] = useState<'increase' | 'decrease' | 'neutral'>('neutral');
-
-  useEffect(() => {
-    if (balance > prevBalanceRef.current) setBalanceChangeType('increase');
-    else if (balance < prevBalanceRef.current) setBalanceChangeType('decrease');
-    prevBalanceRef.current = balance;
-  }, [balance]);
 
   const progress = Math.min((balance / (goal.targetAmount || 1)) * 100, 100);
   

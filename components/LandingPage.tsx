@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { motion, useScroll, useTransform, useSpring, useMotionValue, useMotionTemplate, AnimatePresence } from 'framer-motion';
+import React, { useState, useEffect } from 'react';
+import { motion, useTransform, useSpring, useMotionValue, useMotionTemplate, AnimatePresence } from 'framer-motion';
 import { Button } from './ui/Button';
 import { Mockup } from './ui/Mockup';
-import { ArrowRight, CheckCircle2, TrendingUp, Trophy, Wallet, Zap, ShoppingBag, Brain, X, Star, Quote, ChevronDown, Users, Target, ShieldCheck, Plus, Check } from 'lucide-react';
+import { ArrowRight, CheckCircle2, TrendingUp, Trophy, Wallet, Zap, ShoppingBag, Brain, X, ChevronDown, Target, ShieldCheck, Plus, Check } from 'lucide-react';
 import { Logo } from './Logo';
 
 interface LandingPageProps {
@@ -94,12 +94,12 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
       >
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-emerald-500/20 rounded-full blur-[120px] opacity-40 pointer-events-none" />
 
-        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div className="space-y-8 text-center lg:text-left relative z-20">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 xl:grid-cols-2 gap-16 items-center">
+          <div className="space-y-8 text-center xl:text-left relative z-20">
              <motion.div 
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-900 text-emerald-400 text-xs font-bold border border-zinc-800 shadow-lg"
+                className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-zinc-900 text-emerald-400 text-xs font-bold border border-zinc-800 shadow-lg mx-auto xl:mx-0"
              >
                 <Zap size={14} fill="currentColor" /> MÉTODO COMPROVADO
              </motion.div>
@@ -108,7 +108,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
-                className="text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] text-white"
+                className="text-4xl sm:text-5xl md:text-7xl font-extrabold tracking-tight leading-[1.1] text-white"
              >
                 Transforme sua <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-emerald-400 via-teal-300 to-emerald-500 animate-pulse">Produtividade</span> em Riqueza.
@@ -118,7 +118,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.2 }}
-                className="text-xl text-zinc-400 max-w-lg mx-auto lg:mx-0 leading-relaxed"
+                className="text-lg md:text-xl text-zinc-400 max-w-lg mx-auto xl:mx-0 leading-relaxed"
              >
                 O único gerenciador de tarefas que paga você. Use a gamificação para hackear sua dopamina e conquistar seus objetivos reais.
              </motion.p>
@@ -127,7 +127,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.3 }}
-                className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start"
+                className="flex flex-col sm:flex-row gap-4 justify-center xl:justify-start"
              >
                 <Button size="lg" onClick={onStart} className="bg-emerald-500 hover:bg-emerald-600 text-white shadow-[0_0_30px_-5px_rgba(16,185,129,0.4)] border-0 h-14 px-8 text-lg">
                     Criar Conta Grátis <ArrowRight className="ml-2" size={20} />
@@ -141,7 +141,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.5 }}
-                className="pt-6 flex items-center justify-center lg:justify-start gap-8 text-sm text-zinc-500"
+                className="pt-6 flex items-center justify-center xl:justify-start gap-8 text-sm text-zinc-500"
              >
                  <div className="flex items-center gap-2"><ShieldCheck size={18} className="text-emerald-500" /> Dados criptografados</div>
                  <div className="flex items-center gap-2"><Zap size={18} className="text-amber-500" /> 100% Gratuito</div>
@@ -155,7 +155,7 @@ export const LandingPage: React.FC<LandingPageProps> = ({ onStart }) => {
                rotateY: springRotateY,
                transformStyle: "preserve-3d"
              }}
-             className="relative hidden lg:block perspective-1000"
+             className="relative hidden xl:block perspective-1000"
           >
              <div className="relative z-10 transform transition-transform duration-100 drop-shadow-2xl">
                 <Mockup />
