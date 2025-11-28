@@ -6,7 +6,7 @@ export interface GrindItem {
   value: number;
   type: ItemType;
   createdAt: number;
-  completedAt?: number | null; // For tasks
+  completedAt?: number | null; // Timestamp quando a tarefa foi concluída
   lastCompletedDate?: string | null; // For habits (YYYY-MM-DD)
 }
 
